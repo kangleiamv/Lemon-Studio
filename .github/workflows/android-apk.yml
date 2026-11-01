@@ -26,6 +26,10 @@ jobs:
 
       - uses: android-actions/setup-android@v3
 
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.9
+
       - name: Install Android SDK packages
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0" "ndk;27.2.12479018"
 
@@ -41,7 +45,7 @@ jobs:
       - name: Configure Android NDK C/C++ compilers
         shell: bash
         run: |
-          NDK="$ANDROID_NDK_HOME"
+          NDK="$ANDROID_HOME/ndk/27.2.12479018"
           TOOLCHAIN="$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin"
           {
             echo "CC_aarch64_linux_android=$TOOLCHAIN/aarch64-linux-android26-clang"
