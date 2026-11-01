@@ -33,10 +33,23 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends clang libclang-dev pkg-config
-      - name: Configure Android linker
+      - name: Configure Android NDK toolchain
+        shell: bash
         run: |
-          echo "CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android26-clang" >> "$GITHUB_ENV"
-          echo "CC_aarch64_linux_android=$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android26-clang" >> "$GITHUB_ENV"
-          echo "AR_aarch64_linux_android=$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar" >> "$GITHUB_ENV"
+          NDK_ROOT="${ANDROID_NDK_LATEST_HOME:-$ANDROID_NDK_HOME}"
+          if [[ -z "$NDK_ROOT" || ! -d "$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin" ]]; then
+            echo "::error::Android NDK was not found on this runner."
+            env | sort | grep -E 'ANDROID_(NDK|HOME|SDK)' || true
+            exit 1
+          fi
+          TOOLCHAIN="$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          test -x "$TOOLCHAIN/aarch64-linux-android26-clang"
+          test -x "$TOOLCHAIN/aarch64-linux-android26-clang++"
+          {
+            echo "CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$TOOLCHAIN/aarch64-linux-android26-clang"
+            echo "CC_aarch64_linux_android=$TOOLCHAIN/aarch64-linux-android26-clang"
+            echo "CXX_aarch64_linux_android=$TOOLCHAIN/aarch64-linux-android26-clang++"
+            echo "AR_aarch64_linux_android=$TOOLCHAIN/llvm-ar"
+          } >> "$GITHUB_ENV"
       - name: Check reusable Rust crates for Android ARM64
         run: cargo check --locked --target aarch64-linux-android -p os-model -p os-dsp -p os-engine
