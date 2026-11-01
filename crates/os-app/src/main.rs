@@ -749,7 +749,7 @@ impl ApplicationHandler for Shell {
         };
         // Linux: the app id names the desktop entry (`lemonstudio.desktop`), where Wayland compositors find the icon;
         // X11 takes the icon from the window.
-        #[cfg(all(unix, not(target_os = "macos")))]
+        #[cfg(target_os = "linux")]
         let attrs = {
             use winit::platform::wayland::WindowAttributesExtWayland;
             use winit::platform::x11::WindowAttributesExtX11;
@@ -1796,7 +1796,7 @@ fn use_x11() -> bool {
 
 /// SIGINT (Ctrl+C in the terminal) and SIGTERM: the program closes as it does with its window, within a tick. A second
 /// one ends it at once, should the first not get through.
-#[cfg(unix)]
+#[cfg(all(unix, not(target_os = "android")))]
 mod stop_signal {
     use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -2010,7 +2010,7 @@ fn run_app(android_app: PlatformApp) {
         detached: Vec::new(),
         key_on: None,
     };
-    #[cfg(unix)]
+    #[cfg(all(unix, not(target_os = "android")))]
     stop_signal::install();
     event_loop.run_app(&mut shell).expect("run");
     // After a contained plugin crash the process ends here, before plugin files are unloaded (a stopped plugin's code
