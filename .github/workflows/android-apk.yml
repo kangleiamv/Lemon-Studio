@@ -43,7 +43,7 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-linux-android
+          targets: aarch64-linux-android,x86_64-linux-android
 
       - uses: Swatinem/rust-cache@v2
 
@@ -59,10 +59,15 @@ jobs:
             echo "CC_aarch64_linux_android=$TOOLCHAIN/aarch64-linux-android29-clang"
             echo "CXX_aarch64_linux_android=$TOOLCHAIN/aarch64-linux-android29-clang++"
             echo "AR_aarch64_linux_android=$TOOLCHAIN/llvm-ar"
+            echo "CC_x86_64_linux_android=$TOOLCHAIN/x86_64-linux-android29-clang"
+            echo "CXX_x86_64_linux_android=$TOOLCHAIN/x86_64-linux-android29-clang++"
+            echo "AR_x86_64_linux_android=$TOOLCHAIN/llvm-ar"
           } >> "$GITHUB_ENV"
 
       - name: Build original Lemon Studio Android library
-        run: cargo ndk -t arm64-v8a --platform 29 -o android/app/src/main/jniLibs build --release -p os-app --lib
+        run: |
+          cargo ndk -t arm64-v8a --platform 29 -o android/app/src/main/jniLibs build --release -p os-app --lib
+          cargo ndk -t x86_64 --platform 29 -o android/app/src/main/jniLibs build --release -p os-app --lib
 
       - name: Package Android C++ runtime
         shell: bash
@@ -72,6 +77,10 @@ jobs:
           test -f "$RUNTIME"
           mkdir -p android/app/src/main/jniLibs/arm64-v8a
           cp "$RUNTIME" android/app/src/main/jniLibs/arm64-v8a/libc++_shared.so
+          X86_RUNTIME="$NDK/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/libc++_shared.so"
+          test -f "$X86_RUNTIME"
+          mkdir -p android/app/src/main/jniLibs/x86_64
+          cp "$X86_RUNTIME" android/app/src/main/jniLibs/x86_64/libc++_shared.so
 
       - name: Build debug APK
         working-directory: android
