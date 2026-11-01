@@ -177,6 +177,11 @@ use winit::window::{CursorGrabMode, CursorIcon, ResizeDirection, Window, WindowI
 use app::App;
 use os_ui::Canvas;
 
+#[cfg(target_os = "android")]
+type PlatformApp = winit::platform::android::activity::AndroidApp;
+#[cfg(not(target_os = "android"))]
+type PlatformApp = ();
+
 struct Shell {
     app: App,
     window: Option<Rc<Window>>,
@@ -1843,7 +1848,18 @@ fn attach_console() {
     }
 }
 
+#[cfg(not(target_os = "android"))]
 fn main() {
+    run_app(());
+}
+
+#[cfg(target_os = "android")]
+#[unsafe(no_mangle)]
+pub fn android_main(android_app: PlatformApp) {
+    run_app(android_app);
+}
+
+fn run_app(android_app: PlatformApp) {
     #[cfg(windows)]
     attach_console();
     let mut args: Vec<String> = std::env::args().skip(1).collect();
@@ -1885,10 +1901,16 @@ fn main() {
     if let Some(at) = &control.serve {
         control::server::serve_headless(at, level, control.token.clone(), args.first().map(std::path::PathBuf::from));
     }
-    // Run from source: Lemon Studio's own plugins are rebuilt and installed before the plugin scan looks for them.
+    // Desktop builds rebuild and scan external plugin binaries. Android uses the built-in Rust plugins only.
+    #[cfg(not(target_os = "android"))]
     plugin_rebuild::run();
     let path = args.first().map(std::path::PathBuf::from);
     let mut builder = EventLoop::<()>::with_user_event();
+    #[cfg(target_os = "android")]
+    {
+        use winit::platform::android::EventLoopBuilderExtAndroid;
+        builder.with_android_app(android_app);
+    }
     #[cfg(target_os = "linux")]
     if use_x11() {
         use winit::platform::x11::EventLoopBuilderExtX11;
@@ -1944,8 +1966,11 @@ fn main() {
     layout::restore(&mut app.state);
     // MIDI devices (spec: ui/midi-settings.md §2): the enabled inputs play the selected channel; master sync goes out.
     splash::step(&splash, splash::MIDI, "Opening MIDI devices");
-    app.midi = midi_in::MidiIn::open(wake_ui);
-    app.midi_out = midi_out::MidiOut::start(app.transport.watch());
+    #[cfg(not(target_os = "android"))]
+    {
+        app.midi = midi_in::MidiIn::open(wake_ui);
+        app.midi_out = midi_out::MidiOut::start(app.transport.watch());
+    }
     let message = app.state.message.clone();
     app.midi_refresh(false);
     if message.is_some() {
