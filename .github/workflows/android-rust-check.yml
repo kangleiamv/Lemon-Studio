@@ -1,0 +1,46 @@
+name: Android Rust compatibility
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [android-port]
+    paths:
+      - 'crates/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/android-rust-check.yml'
+  pull_request:
+    paths:
+      - 'crates/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/android-rust-check.yml'
+
+jobs:
+  android-rust-check:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+      - uses: Swatinem/rust-cache@v2
+      - name: Install native build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends clang libclang-dev pkg-config
+      - name: Configure Android linker and C/C++ compilers
+        run: |
+          LLVM_BIN="$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          echo "$LLVM_BIN" >> "$GITHUB_PATH"
+          echo "CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$LLVM_BIN/aarch64-linux-android26-clang" >> "$GITHUB_ENV"
+          echo "CC_aarch64_linux_android=$LLVM_BIN/aarch64-linux-android26-clang" >> "$GITHUB_ENV"
+          echo "CXX_aarch64_linux_android=$LLVM_BIN/aarch64-linux-android26-clang++" >> "$GITHUB_ENV"
+          echo "AR_aarch64_linux_android=$LLVM_BIN/llvm-ar" >> "$GITHUB_ENV"
+          echo "RANLIB_aarch64_linux_android=$LLVM_BIN/llvm-ranlib" >> "$GITHUB_ENV"
+      - name: Check reusable Rust crates for Android ARM64
+        run: cargo check --locked --target aarch64-linux-android -p os-model -p os-dsp -p os-engine
