@@ -2,7 +2,7 @@ use jni::objects::JClass;
 use jni::sys::jstring;
 use jni::JNIEnv;
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "system" fn Java_org_lemonstudio_android_MainActivity_nativeStatus(
     mut env: JNIEnv,
     _class: JClass,
