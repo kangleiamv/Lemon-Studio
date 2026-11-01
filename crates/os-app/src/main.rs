@@ -704,11 +704,16 @@ impl ApplicationHandler for Shell {
             return;
         }
         splash::step(&self.splash, splash::WINDOW, "Opening the main window");
+        #[cfg(target_os = "android")]
+        let attrs = Window::default_attributes()
+            .with_title("Lemon Studio")
+            .with_decorations(false);
+        #[cfg(not(target_os = "android"))]
         let attrs = Window::default_attributes()
             .with_title("Lemon Studio")
             .with_decorations(false)
             .with_inner_size(LogicalSize::new(1920.0, 1080.0))
-            // Layouts are measured at 1920x1080 and are not responsive yet; below this they break.
+            // Desktop layouts are measured at 1920x1080; Android uses the actual device surface size.
             .with_min_inner_size(LogicalSize::new(1024.0, 600.0))
             .with_maximized(true);
         // macOS: the restored size (the window's size once un-maximized) fits the screen; a Mac's screen is often
@@ -723,6 +728,9 @@ impl ApplicationHandler for Shell {
         };
         // Where the last run left it (`layout`), its top on the screens there are now. macOS places it at its restored
         // frame and maximizes it once made (`set_maximized` keeps that frame to restore to).
+        #[cfg(target_os = "android")]
+        let frame = None;
+        #[cfg(not(target_os = "android"))]
         let frame = self.main_win.map(|m| layout::on_screens(m, &screens(el)));
         self.main_win = frame;
         let attrs = match frame {
@@ -2006,7 +2014,12 @@ fn run_app(android_app: PlatformApp) {
         frames: FrameLog::open(),
         watchdog,
         ctrl_click: false,
-        main_win: layout::main_win(),
+        main_win: {
+            #[cfg(target_os = "android")]
+            { None }
+            #[cfg(not(target_os = "android"))]
+            { layout::main_win() }
+        },
         detached: Vec::new(),
         key_on: None,
     };
