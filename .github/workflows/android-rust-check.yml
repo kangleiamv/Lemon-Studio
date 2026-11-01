@@ -62,4 +62,4 @@ jobs:
             echo "AR_aarch64_linux_android=$TOOLCHAIN/llvm-ar"
           } >> "$GITHUB_ENV"
       - name: Check reusable Rust crates for Android ARM64
-        run: cargo check --target aarch64-linux-android -p os-model -p os-dsp -p os-engine
+        run: cargo check --target aarch64-linux-android -p os-app --lib
