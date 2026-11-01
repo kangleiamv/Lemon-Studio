@@ -619,7 +619,7 @@ impl Shell {
             el.exit();
         }
         // Ctrl+C in the terminal, or a kill: closes without asking (`exiting` keeps unsaved changes as a backup).
-        #[cfg(unix)]
+        #[cfg(all(unix, not(target_os = "android")))]
         if stop_signal::asked() {
             el.exit();
         }
@@ -833,7 +833,7 @@ impl ApplicationHandler for Shell {
         }
         layout::save(&self.app.state);
         // Stopped by a signal with changes unsaved: nobody was asked, so they go to a backup.
-        #[cfg(unix)]
+        #[cfg(all(unix, not(target_os = "android")))]
         if stop_signal::asked() && self.app.unsaved() {
             let _ = self.app.write_backup(chrono::Local::now().naive_local());
         }
