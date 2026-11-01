@@ -5,6 +5,11 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 
+[lib]
+name = "main"
+path = "src/main.rs"
+crate-type = ["cdylib"]
+
 [[bin]]
 name = "lemonstudio"
 path = "src/main.rs"
@@ -50,7 +55,7 @@ lemon-peak-controller = { path = "../../plugins/lemon-peak-controller", features
 lemon-formula-controller = { path = "../../plugins/lemon-formula-controller", features = ["linked"] }
 lemon-slicer = { path = "../../plugins/lemon-slicer", features = ["linked"] }
 lemon-vocoder = { path = "../../plugins/lemon-vocoder", features = ["linked"] }
-winit = "0.30"
+winit = { version = "0.30", features = ["android-native-activity"] }
 softbuffer = "0.4"
 cpal = "0.18"
 crossbeam-queue = "0.3"
